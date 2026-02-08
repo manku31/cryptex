@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Dispatch, SetStateAction, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
 import { toast } from "sonner";
@@ -26,11 +26,19 @@ interface Wallet {
 
 interface WalletDetailsProps {
   wallets: Wallet[];
+  handleAddWallet: () => void;
+  handleClearWallets: () => void;
+  handleDeleteWallet: (index: number) => void;
 }
 
-const WalletDetails = ({ wallets }: WalletDetailsProps) => {
+const WalletDetails = ({
+  wallets,
+  handleAddWallet,
+  handleClearWallets,
+  handleDeleteWallet,
+}: WalletDetailsProps) => {
   const [visiblePrivateKeys, setVisiblePrivateKeys] = useState<boolean[]>(
-    wallets.map(() => false)
+    wallets.map(() => false),
   );
 
   const copyToClipboard = (text: string, label: string) => {
@@ -44,18 +52,17 @@ const WalletDetails = ({ wallets }: WalletDetailsProps) => {
     setVisiblePrivateKeys(newVisibility);
   };
 
-  const handleDelete = (index: number, wallet: Wallet) => {
-    console.log("Deleting wallet:", {
-      index,
-      wallet,
-      walletNumber: index + 1,
-    });
-    toast.success(`Wallet ${index + 1} deleted successfully!`);
-  };
-
   return (
     <div className="flex flex-col gap-4 w-full">
-      <h2 className="text-2xl font-bold">Your Solana Wallets</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">Your Solana Wallets</h2>
+        <div className="flex gap-4">
+          <Button onClick={() => handleAddWallet()}>Add Wallet</Button>
+          <Button variant="destructive" onClick={() => handleClearWallets()}>
+            Clear Wallets
+          </Button>
+        </div>
+      </div>
       {wallets.map((wallet, index) => (
         <Card key={index} variant="elevated">
           <CardHeader>
@@ -63,18 +70,16 @@ const WalletDetails = ({ wallets }: WalletDetailsProps) => {
               <CardTitle>Wallet {index + 1}</CardTitle>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    className="gap-2"
-                  >
+                  <Button variant="destructive" size="sm" className="gap-2">
                     <Trash2 className="h-4 w-4" />
                     Delete
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Wallet {index + 1}?</AlertDialogTitle>
+                    <AlertDialogTitle>
+                      Delete Wallet {index + 1}?
+                    </AlertDialogTitle>
                     <AlertDialogDescription>
                       This action cannot be undone. This will permanently delete
                       your wallet and remove all associated data.
@@ -83,7 +88,7 @@ const WalletDetails = ({ wallets }: WalletDetailsProps) => {
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction
-                      onClick={() => handleDelete(index, wallet)}
+                      onClick={() => handleDeleteWallet(index)}
                       className="bg-destructive text-white hover:bg-destructive/90"
                     >
                       Delete
@@ -131,7 +136,9 @@ const WalletDetails = ({ wallets }: WalletDetailsProps) => {
                 <div className="flex-1 space-y-2">
                   <label className="text-sm font-semibold text-foreground flex items-center gap-2">
                     Private Key
-                    <span className="text-xs font-normal text-destructive">(Keep Secret)</span>
+                    <span className="text-xs font-normal text-destructive">
+                      (Keep Secret)
+                    </span>
                   </label>
                   <div className="flex gap-2 items-start">
                     <code className="flex-1 p-3 bg-background border border-border rounded-md text-xs break-all font-mono">

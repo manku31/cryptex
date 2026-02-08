@@ -3,7 +3,7 @@
 import { generateMnemonic, mnemonicToSeedSync } from "bip39";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { derivePath } from "ed25519-hd-key";
 import { toast } from "sonner";
 import nacl from "tweetnacl";
@@ -95,6 +95,66 @@ const GenerateInput = () => {
     }
   };
 
+  const handleAddWallet = () => {
+    try {
+      if (!mnemonicWords) {
+        toast.error("No mnemonic found. Please generate a wallet first.");
+        return;
+      }
+
+      const wallet = generateWalletFromMnemonic(
+        "501",
+        mnemonicWords.join(" "),
+        wallets.length,
+      );
+
+      if (wallet) {
+        const updatedWallets = [...wallets, wallet];
+        setWallets(updatedWallets);
+        localStorage.setItem("wallets", JSON.stringify(updatedWallets));
+        setVisiblePrivateKeys([...visiblePrivateKeys, false]);
+        setVisiblePhrases([...visiblePhrases, false]);
+        toast.success("Wallet generated successfully!");
+      }
+    } catch (error) {
+      toast.error("Error adding wallet. Please try again.");
+      console.error("Error adding wallet : ", error);
+    }
+  };
+
+  const handleClearWallets = () => {
+    setWallets([]);
+    setMnemonicWords([...Array(12).fill("")]);
+    localStorage.removeItem("wallets");
+    localStorage.removeItem("mnemonics");
+    setVisiblePrivateKeys([]);
+    setVisiblePhrases([]);
+    toast.success("All wallets cleared successfully!");
+  };
+
+  const handleDeleteWallet = (index: number) => {
+    const updatedWallets = wallets.filter((_, i) => i !== index);
+    // const updatedPathTypes = pathTypes.filter((_, i) => i !== index);
+
+    setWallets(updatedWallets);
+    localStorage.setItem("wallets", JSON.stringify(updatedWallets));
+    setVisiblePrivateKeys(visiblePrivateKeys.filter((_, i) => i !== index));
+    setVisiblePhrases(visiblePhrases.filter((_, i) => i !== index));
+    toast.success("Wallet deleted successfully!");
+  };
+
+  useEffect(() => {
+    const storedWallets = localStorage.getItem("wallets");
+    const storedMnemonics = localStorage.getItem("mnemonics");
+
+    if (storedWallets && storedMnemonics) {
+      setWallets(JSON.parse(storedWallets));
+      setMnemonicWords(JSON.parse(storedMnemonics));
+      setVisiblePrivateKeys(JSON.parse(storedWallets).map(() => false));
+      setVisiblePhrases(JSON.parse(storedWallets).map(() => false));
+    }
+  }, []);
+
   return (
     <div className="flex flex-col w-full justify-center gap-6">
       {wallets.length === 0 && (
@@ -126,7 +186,14 @@ const GenerateInput = () => {
         <SecretPhraseDetails mnemonicWords={mnemonicWords} />
       )}
 
-      {wallets.length > 0 && <WalletDetails wallets={wallets}/>}
+      {wallets.length > 0 && (
+        <WalletDetails
+          wallets={wallets}
+          handleAddWallet={handleAddWallet}
+          handleClearWallets={handleClearWallets}
+          handleDeleteWallet={handleDeleteWallet}
+        />
+      )}
     </div>
   );
 };
